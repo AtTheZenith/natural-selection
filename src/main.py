@@ -1,7 +1,8 @@
-import math
-from typing import List
 import pygame
 import random
+from bot import Bot, BotRegistry
+import const
+from food import Food, FoodRegistry
 
 pygame.init()
 
@@ -9,127 +10,6 @@ window = pygame.display.set_mode((1920, 1080))
 clock = pygame.time.Clock()
 
 pygame.display.set_caption("Natural Selection")
-
-bot_img = pygame.image.load("./assets/images/bot.png")
-bot_img_size = 40
-
-
-class Bot:
-    def __init__(self, x: float = 20, y: float = 20, size: float = 1, speed: float = 1):
-        self.x = x
-        self.y = y
-
-        self.speed = speed * 150
-        self.size = size
-        self.move_direction: List[float] = [0, 0]
-
-        self.image = bot_img.copy()
-        self.image = pygame.transform.scale_by(self.image, size)
-        self.rect = self.image.get_rect()
-
-    def draw(self):
-        window.blit(
-            self.image,
-            (
-                self.x - bot_img_size / 2 * self.size,
-                self.y - bot_img_size / 2 * self.size,
-            ),
-        )
-
-    def get_rect(self):
-        return self.rect
-
-    def manual_pos(self, x, y):
-        self.x = x
-        self.y = y
-        self.rect.center = (self.x, self.y)
-
-    def move(self, x, y):
-        if x == 0 and y == 0:
-            self.move_direction[0] = 0
-            self.move_direction[1] = 0
-            return
-
-        mag = math.sqrt(x**2 + y**2)
-        self.move_direction[0] = x / mag
-        self.move_direction[1] = y / mag
-
-    def update_pos(self, time=1 / 60):
-        self.manual_pos(
-            self.x + self.move_direction[0] * self.speed * time,
-            self.y + self.move_direction[1] * self.speed * time,
-        )
-
-
-class BotRegistry:
-    def __init__(self):
-        self.bots = []
-        self.bot_count = len(self.bots)
-
-    def add(self, bot):
-        self.bots.append(bot)
-        self.bot_count = len(self.bots)
-        return bot
-
-    def remove(self, bot):
-        self.bots.remove(bot)
-        self.bot_count = len(self.bots)
-        return bot
-
-    def get_nearest(self, bot, count=math.inf):
-        nearest = []
-        for near in self.bots:
-            if near == bot:
-                continue
-            elif len(nearest) == 0:
-                nearest.append(near)
-            else:
-                for comp in nearest:
-                    old_mag = pygame.math.Vector2(bot.x, bot.y).distance_to((
-                        comp.x,
-                        comp.y,
-                    ))
-                    new_mag = pygame.math.Vector2(bot.x, bot.y).distance_to((
-                        near.x,
-                        near.y,
-                    ))
-
-                    if new_mag < old_mag:
-                        nearest.insert(nearest.index(comp), near)
-                        if len(nearest) > count:
-                            nearest.pop(-1)
-                        break
-
-        return nearest
-
-    def get_in_range(self, bot, distance=math.inf):
-        bots = []
-        for near in self.bots:
-            if near == bot:
-                continue
-            mag = pygame.math.Vector2(bot.x, bot.y).distance_to((
-                near.x,
-                near.y,
-            ))
-            if mag < distance:
-                bots.append(near)
-
-        return bots
-
-
-br = BotRegistry()
-
-
-def spawn_bots(count):
-    pos = [(20, 20), (580, 20), (20, 380), (580, 380)]
-    for _ in range(count):
-        sel = random.choice(pos)
-        br.add(Bot(sel[0], sel[1], random.randint(1, 3), speed=random.random() * 2 + 1))
-
-
-spawn_bots(4)
-
-
 
 
 def handle_collision(bot1, bot2):
@@ -150,7 +30,6 @@ def handle_collision(bot1, bot2):
 
         relative_vx = b2_vx - b1_vx
         relative_vy = b2_vy - b1_vy
-
 
         max_correction = 10
         correction_factor = 0.2
@@ -192,6 +71,21 @@ def handle_collision(bot1, bot2):
                     bot2.manual_pos(bot2.x, bot2.y + move_y)
 
 
+br = BotRegistry()
+
+pos = [(20, 20), (1900, 20), (20, 1060), (1900, 1060)]
+for _ in range(3):
+    sel = random.choice(pos)
+    br.add(
+        Bot(window, sel[0], sel[1], random.randint(1, 3), speed=random.random() * 2 + 1)
+    )
+
+fr = FoodRegistry()
+
+for _ in range(1):
+    fr.add(Food(window, 960, 540))
+
+
 running = True
 while running:
     for event in pygame.event.get():
@@ -207,14 +101,21 @@ while running:
         else:
             bot.move(br.bots[0].x - bot.x, br.bots[0].y - bot.y)
         bot.update_pos()
-        bot.draw()
 
     for _ in range(2):
         for bot in br.bots:
-            nearby_bots = br.get_in_range(bot, 100)
+            nearby_bots = br.get_in_range(bot, const.BOT_RANGE)
             for other in nearby_bots:
                 if bot != other and bot.rect.colliderect(other.rect):
                     handle_collision(bot, other)
+
+    fr.check_eaten(br.bots)
+
+    for bot in br.bots:
+        bot.draw()
+
+    for food in fr.food:
+        food.draw()
 
     pygame.display.update()
     clock.tick(60)
