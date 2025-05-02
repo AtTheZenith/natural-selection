@@ -10,20 +10,27 @@ class Bot:
         window,
         x: float = 20,
         y: float = 20,
-        size: float = const.BOT_SIZE,
+        size: float = 1,
         speed: float = 1,
+        range: float = 3,
     ):
         self.window = window
         self.x = x
         self.y = y
+        self.energy: float = const.MAX_ENERGY
 
-        self.speed = speed * const.BOT_SPEED
+        self.speed = speed
+        self.true_speed = speed * const.BOT_SPEED
         self.size = size
+        self.true_size = size * const.BOT_SIZE
+        self.range = range
+        self.true_range = range * const.BOT_SIZE / 4 + (
+            self.true_size * math.sqrt(2) / 2
+        )
         self.move_direction: List[float] = [0, 0]
 
         self.image = const.BOT_IMAGE.copy()
         self.image = pygame.transform.scale_by(self.image, size)
-        self.rect = self.image.get_rect()
 
     def draw(self):
         self.window.blit(
@@ -35,12 +42,12 @@ class Bot:
         )
 
     def get_rect(self):
-        return self.rect
+        return self.image.get_rect()
 
     def manual_pos(self, x, y):
         self.x = x
         self.y = y
-        self.rect.center = (self.x, self.y)
+        self.image.get_rect().center = (self.x, self.y)
 
     def move(self, x, y):
         if x == 0 and y == 0:
@@ -52,16 +59,23 @@ class Bot:
         self.move_direction[0] = x / mag
         self.move_direction[1] = y / mag
 
-    def update_pos(self, time=1 / 60):
+    def update(self, time=const.FRAME_RATE):
         self.manual_pos(
-            self.x + self.move_direction[0] * self.speed * time,
-            self.y + self.move_direction[1] * self.speed * time,
+            self.x + self.move_direction[0] * self.true_speed / time,
+            self.y + self.move_direction[1] * self.true_speed / time,
         )
+
+        self.energy -= (
+            (self.size * 10) * (self.speed**2) + self.true_range
+        ) / const.FRAME_RATE
+
+    def add_energy(self, energy: float):
+        self.energy = min(self.energy + energy, const.MAX_ENERGY)
 
 
 class BotRegistry:
     def __init__(self):
-        self.bots = []
+        self.bots: List[Bot] = []
         self.bot_count = len(self.bots)
 
     def add(self, bot):
@@ -74,7 +88,7 @@ class BotRegistry:
         self.bot_count = len(self.bots)
         return bot
 
-    def get_nearest(self, bot, count=math.inf):
+    def get_nearest(self, bot, count=5):
         nearest = []
         for near in self.bots:
             if near == bot:
@@ -100,16 +114,22 @@ class BotRegistry:
 
         return nearest
 
-    def get_in_range(self, bot, distance=math.inf):
-        bots = []
-        for near in self.bots:
-            if near == bot:
+    def get_in_range(self, bot, distance=const.BOT_RANGE):
+        in_range = []
+        for sel in self.bots:
+            if sel == bot:
                 continue
             mag = pygame.math.Vector2(bot.x, bot.y).distance_to((
-                near.x,
-                near.y,
+                sel.x,
+                sel.y,
             ))
             if mag < distance:
-                bots.append(near)
+                in_range.append(sel)
 
-        return bots
+        return in_range
+
+    def check_energy(self):
+        for bot in self.bots:
+            if bot.energy <= 0:
+                self.bots.remove(bot)
+                self.check_energy()

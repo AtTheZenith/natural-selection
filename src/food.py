@@ -1,6 +1,7 @@
 import pygame
 from typing import List
 from bot import Bot
+import collision
 import const
 
 
@@ -12,7 +13,7 @@ class Food:
         self.energy = energy
 
         self.image = const.FOOD_IMAGE.copy()
-        self.rect = self.image.get_rect()
+        self.get_rect = self.image.get_rect
 
     def draw(self):
         self.window.blit(
@@ -23,13 +24,10 @@ class Food:
             ),
         )
 
-    def get_rect(self):
-        return self.rect
-
     def set_pos(self, x, y):
         self.x = x
         self.y = y
-        self.rect.center = (self.x, self.y)
+        self.get_rect().center = (self.x, self.y)
 
     def is_colliding(self, bot: Bot):
         return const.BOT_SIZE + const.FOOD_SIZE > pygame.math.Vector2(
@@ -58,8 +56,47 @@ class FoodRegistry:
     def check_eaten(self, bots: List[Bot]):
         for bot in bots:
             for food in self.food:
-                if food.is_colliding(bot):
-                    print(food.x, food.y)
-                    print(bot.x, bot.y)
-                    print(bot)
+                if collision.is_colliding(bot, food):
                     self.food.remove(food)
+                    bot.add_energy(const.FOOD_ENERGY)
+                    self.check_eaten(bots)
+
+    def get_nearest(self, bot, count=5):
+        nearest = []
+        for near in self.food:
+            if near == bot:
+                continue
+            elif len(nearest) == 0:
+                nearest.append(near)
+            else:
+                for comp in nearest:
+                    old_mag = pygame.math.Vector2(bot.x, bot.y).distance_to((
+                        comp.x,
+                        comp.y,
+                    ))
+                    new_mag = pygame.math.Vector2(bot.x, bot.y).distance_to((
+                        near.x,
+                        near.y,
+                    ))
+
+                    if new_mag < old_mag:
+                        nearest.insert(nearest.index(comp), near)
+                        if len(nearest) > count:
+                            nearest.pop(-1)
+                        break
+
+        return nearest
+
+    def get_in_range(self, bot, distance=const.BOT_RANGE):
+        in_range = []
+        for sel in self.food:
+            if sel == bot:
+                continue
+            mag = pygame.math.Vector2(bot.x, bot.y).distance_to((
+                sel.x,
+                sel.y,
+            ))
+            if mag < distance:
+                in_range.append(sel)
+
+        return in_range
