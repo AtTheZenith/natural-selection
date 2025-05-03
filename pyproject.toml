@@ -1,6 +1,6 @@
 [project]
 name = "natural-selection"
-version = "0.3.0"
+version = "0.3.1"
 description = "Natural Selection Simulator"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -9,5 +9,4 @@ dependencies = [
     "pandas>=2.2.3",
     "pygame>=2.6.1",
     "scipy>=1.15.2",
-    "tensorflow>=2.19.0",
 ]
