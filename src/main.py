@@ -29,7 +29,7 @@ for _ in range(2):
 fr = FoodRegistry()
 for _ in range(const.FOOD_START):
     x = random.random() * 1920
-    y = random.random() * 1080
+    y = random.random() * 1020
     fr.add(Food(window, x, y))
 
 
@@ -83,7 +83,6 @@ while running:
     fr.check_eaten(br.bots)
     br.energy_cycle()
     br.reproduce_cycle()
-    
 
     for bot in br.bots:
         bot.draw()

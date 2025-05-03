@@ -13,7 +13,9 @@ class Food:
         self.energy = energy
 
         self.image = const.FOOD_IMAGE.copy()
-        self.image = pygame.transform.scale_by(self.image, const.FOOD_SIZE / self.image.get_size()[1])
+        self.image = pygame.transform.scale_by(
+            self.image, const.FOOD_SIZE / self.image.get_size()[1]
+        )
         self.get_rect = self.image.get_rect
 
     def draw(self):
@@ -86,7 +88,7 @@ class FoodRegistry:
 
         return nearest
 
-    def get_in_range(self, bot, distance: float=const.BOT_RANGE):
+    def get_in_range(self, bot, distance: float = const.BOT_RANGE):
         in_range = []
         for sel in self.food:
             if sel == bot:

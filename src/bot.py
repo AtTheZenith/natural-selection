@@ -14,7 +14,7 @@ class Bot:
         size: float = 1,
         speed: float = 1,
         range: float = 50,
-        energy: float = 1
+        energy: float = 1,
     ):
         self.window = window
         self.x = x
@@ -32,7 +32,9 @@ class Bot:
         self.move_direction: List[float] = [0, 0]
 
         self.image = const.BOT_IMAGE.copy()
-        self.image = pygame.transform.scale_by(self.image, size * (const.BOT_SIZE / self.image.get_size()[1]))
+        self.image = pygame.transform.scale_by(
+            self.image, size * (const.BOT_SIZE / self.image.get_size()[1])
+        )
 
     def draw(self):
         self.window.blit(
@@ -68,7 +70,7 @@ class Bot:
         )
 
         self.energy -= (
-            ((self.size ** 2 ) * 10) * (self.speed**3) + self.range
+            ((self.size**4)) * (self.speed**2)  # + self.range
         ) / const.FRAME_RATE
 
     def add_energy(self, energy: float):
@@ -83,7 +85,7 @@ class Bot:
             self.size + (random.random() / 5 - 0.1),
             self.speed + (random.random() / 5 - 0.1),
             self.range,  # + (random.random() / 10 - 0.05),
-            self.energy / 2 / const.MAX_ENERGY
+            self.energy / 2 / const.MAX_ENERGY,
         )
         print(f"New bot created:\nSize: {new_bot.size}\nSpeed: {new_bot.speed}")
 
