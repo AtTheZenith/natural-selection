@@ -78,15 +78,18 @@ class BotRegistry:
         self.bots: List[Bot] = []
         self.bot_count = len(self.bots)
 
-    def add(self, bot):
+    def add(self, bot: Bot):
         self.bots.append(bot)
         self.bot_count = len(self.bots)
         return bot
 
-    def remove(self, bot):
-        self.bots.remove(bot)
-        self.bot_count = len(self.bots)
-        return bot
+    def remove(self, bot: Bot):
+        if bot and isinstance(bot, Bot) and bot in self.bots:
+            self.bots.remove(bot)
+            self.bot_count = len(self.bots)
+            return bot
+        else:
+            return False
 
     def get_nearest(self, bot, count=5):
         nearest = []

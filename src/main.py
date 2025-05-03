@@ -14,13 +14,13 @@ pygame.display.set_caption("Natural Selection")
 
 br = BotRegistry()
 pos = [(20, 20), (1900, 20), (20, 1060), (1900, 1060)]
-for _ in range(8):
-    sel = random.choice(pos)
+for _ in range(30):
+    selected_pos = random.choice(pos)
     br.add(
         Bot(
             window,
-            sel[0],
-            sel[1],
+            selected_pos[0],
+            selected_pos[1],
             1 + random.random() * 3,
             speed=random.random() * 2 + 1,
         )
@@ -43,12 +43,12 @@ while running:
 
     window.fill((50, 120, 240))
 
-    mag_1 = pygame.math.Vector2(br.bots[0].x, br.bots[1].y).distance_to((960, 540))
-    mag_2 = pygame.math.Vector2(br.bots[1].x, br.bots[0].y).distance_to((960, 540))
+    mag_1: float = pygame.math.Vector2(br.bots[0].x, br.bots[1].y).distance_to((960, 540))
+    mag_2: float = pygame.math.Vector2(br.bots[1].x, br.bots[0].y).distance_to((960, 540))
 
-    sel = min(mag_1, mag_2)
+    selected_bot: float = min(mag_1, mag_2)
 
-    if sel == mag_1:
+    if selected_bot == mag_1:
         sel_bot = br.bots[0]
     else:
         sel_bot = br.bots[1]
@@ -65,16 +65,27 @@ while running:
             nearby_bots = br.get_in_range(bot, const.BOT_RANGE)
             for other in nearby_bots:
                 if bot != other and collision.is_colliding(bot, other):
-                    collision.handle(bot, other)
+                    big = max(bot.size, other.size)
+                    small = min(bot.size, other.size)
+                    if (big / small) >= const.MIN_SIZE_DIFF:
+                        match big:
+                            case bot.size:
+                                bot.add_energy(other.energy)
+                                br.remove(other)
+                            case other.size:
+                                other.add_energy(bot.energy)
+                                br.remove(bot)
+                    else:
+                        collision.handle(bot, other)
 
     fr.check_eaten(br.bots)
 
     iter += 1
-    if iter == 4:
+    if iter == const.FOOD_COOLDOWN:
         x = 200 + random.random() * 1420
         y = 200 + random.random() * 680
         fr.add(Food(window, x, y))
-        iter = random.randint(0, 3)
+        iter = random.randint(0, const.FOOD_COOLDOWN - 1)
 
     br.check_energy()
 
