@@ -1,17 +1,24 @@
 import pygame
 
-FRAME_RATE = 60
+FRAME_RATE = 120
 
-BOT_SPEED = 150
+BOT_SPEED = 140
 BOT_RANGE = 200
-BOT_IMAGE = pygame.image.load("./assets/images/bot.png")
-BOT_SIZE = 40
+BOT_IMAGE = pygame.image.load("./assets/bot.png")
+BOT_SIZE = 30
+BOT_MIN_SPEED = 0.5
+BOT_MAX_SPEED = 4
+BOT_MIN_SIZE = 0.5
+BOT_MAX_SIZE = 4
 
-FOOD_IMAGE = pygame.image.load("./assets/images/food.png")
-FOOD_SIZE = 30
-FOOD_COOLDOWN = 1
+FOOD_IMAGE = pygame.image.load("./assets/food.png")
+FOOD_SIZE = 20
+FOOD_COOLDOWN = 0.2
+FOOD_START = 30 
 
-MAX_ENERGY = 1000
+MAX_ENERGY = 1200
 FOOD_ENERGY = 400
-BOT_ENERGY = 600
+BOT_ENERGY = 500
+REPRODUCTION_COST = 350
+REPRODUCTION_MINIMUM = 1000
 MIN_SIZE_DIFF = 1.2

@@ -1,5 +1,5 @@
-import pygame
 import random
+import pygame
 from bot import Bot, BotRegistry
 import collision
 import const
@@ -7,29 +7,29 @@ from food import Food, FoodRegistry
 
 pygame.init()
 
-window = pygame.display.set_mode((1920, 1080))
+window = pygame.display.set_mode((1920, 1020))
 clock = pygame.time.Clock()
 
 pygame.display.set_caption("Natural Selection")
 
 br = BotRegistry()
-pos = [(20, 20), (1900, 20), (20, 1060), (1900, 1060)]
-for _ in range(30):
+pos = [(220, 220), (1700, 220), (220, 860), (1700, 860)]
+for _ in range(2):
     selected_pos = random.choice(pos)
     br.add(
         Bot(
             window,
             selected_pos[0],
             selected_pos[1],
-            1 + random.random() * 3,
-            speed=random.random() * 2 + 1,
+            size=1,
+            speed=1,
         )
     )
 
 fr = FoodRegistry()
-for _ in range(30):
-    x = 200 + random.random() * 1420
-    y = 200 + random.random() * 680
+for _ in range(const.FOOD_START):
+    x = random.random() * 1920
+    y = random.random() * 1080
     fr.add(Food(window, x, y))
 
 
@@ -41,23 +41,18 @@ while running:
             running = False
             exit()
 
-    window.fill((50, 120, 240))
-
-    mag_1: float = pygame.math.Vector2(br.bots[0].x, br.bots[1].y).distance_to((960, 540))
-    mag_2: float = pygame.math.Vector2(br.bots[1].x, br.bots[0].y).distance_to((960, 540))
-
-    selected_bot: float = min(mag_1, mag_2)
-
-    if selected_bot == mag_1:
-        sel_bot = br.bots[0]
-    else:
-        sel_bot = br.bots[1]
+    window.fill((60, 60, 60))
 
     for bot in br.bots:
-        if bot == br.bots[0] or bot == br.bots[1]:
-            bot.move(1920 / 2 - bot.x, 1080 / 2 - bot.y)
+        target = fr.get_nearest(bot, 1)
+        if target[0]:
+            target_x = target[0].x
+            target_y = target[0].y
         else:
-            bot.move(sel_bot.x - bot.x, sel_bot.y - bot.y)
+            target_x = 0
+            target_y = 0
+
+        bot.move(target_x - bot.x, target_y - bot.y)
         bot.update()
 
     for _ in range(3):
@@ -78,16 +73,17 @@ while running:
                     else:
                         collision.handle(bot, other)
 
-    fr.check_eaten(br.bots)
-
     iter += 1
-    if iter == const.FOOD_COOLDOWN:
-        x = 200 + random.random() * 1420
-        y = 200 + random.random() * 680
+    if iter == const.FOOD_COOLDOWN * const.FRAME_RATE:
+        x = random.random() * 1920
+        y = random.random() * 1080
         fr.add(Food(window, x, y))
-        iter = random.randint(0, const.FOOD_COOLDOWN - 1)
+        iter = 0
 
-    br.check_energy()
+    fr.check_eaten(br.bots)
+    br.energy_cycle()
+    br.reproduce_cycle()
+    
 
     for bot in br.bots:
         bot.draw()

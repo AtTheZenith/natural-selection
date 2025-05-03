@@ -1,4 +1,5 @@
 import math
+import random
 import pygame
 from typing import List
 import const
@@ -12,16 +13,17 @@ class Bot:
         y: float = 20,
         size: float = 1,
         speed: float = 1,
-        range: float = 3,
+        range: float = 50,
+        energy: float = 1
     ):
         self.window = window
         self.x = x
         self.y = y
-        self.energy: float = const.MAX_ENERGY
+        self.energy: float = energy * const.MAX_ENERGY
 
-        self.speed = speed
+        self.speed = min(const.BOT_MAX_SPEED, max(const.BOT_MIN_SPEED, speed))
         self.true_speed = speed * const.BOT_SPEED
-        self.size = size
+        self.size = min(const.BOT_MAX_SIZE, max(const.BOT_MIN_SIZE, size))
         self.true_size = size * const.BOT_SIZE
         self.range = range
         self.true_range = range * const.BOT_SIZE / 4 + (
@@ -30,7 +32,7 @@ class Bot:
         self.move_direction: List[float] = [0, 0]
 
         self.image = const.BOT_IMAGE.copy()
-        self.image = pygame.transform.scale_by(self.image, size)
+        self.image = pygame.transform.scale_by(self.image, size * (const.BOT_SIZE / self.image.get_size()[1]))
 
     def draw(self):
         self.window.blit(
@@ -66,11 +68,26 @@ class Bot:
         )
 
         self.energy -= (
-            (self.size * 10) * (self.speed**2) + self.true_range
+            ((self.size ** 2 ) * 10) * (self.speed**3) + self.range
         ) / const.FRAME_RATE
 
     def add_energy(self, energy: float):
         self.energy = min(self.energy + energy, const.MAX_ENERGY)
+
+    def reproduce(self):
+        self.energy -= const.REPRODUCTION_COST
+        new_bot = Bot(
+            self.window,
+            self.x,
+            self.y,
+            self.size + (random.random() / 5 - 0.1),
+            self.speed + (random.random() / 5 - 0.1),
+            self.range,  # + (random.random() / 10 - 0.05),
+            self.energy / 2 / const.MAX_ENERGY
+        )
+        print(f"New bot created:\nSize: {new_bot.size}\nSpeed: {new_bot.speed}")
+
+        return new_bot
 
 
 class BotRegistry:
@@ -131,8 +148,14 @@ class BotRegistry:
 
         return in_range
 
-    def check_energy(self):
+    def energy_cycle(self):
         for bot in self.bots:
             if bot.energy <= 0:
                 self.bots.remove(bot)
-                self.check_energy()
+                self.energy_cycle()
+
+    def reproduce_cycle(self):
+        for bot in self.bots:
+            if bot.energy >= const.REPRODUCTION_MINIMUM:
+                self.add(bot.reproduce())
+                self.reproduce_cycle()
