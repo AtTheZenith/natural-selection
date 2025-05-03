@@ -10,5 +10,5 @@ wheels/
 .python-version
 uv.lock
 
-# Project Files
+# Project files
 src/test.py
