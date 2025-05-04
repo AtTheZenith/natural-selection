@@ -18,7 +18,7 @@ BOT_MAX_RANGE = 5
 FOOD_IMAGE = pygame.image.load("./assets/food.png")
 FOOD_SIZE = 10
 FOOD_START = 50
-FOOD_COOLDOWN = 0.2
+FOOD_COOLDOWN = 0.15
 
 MAX_ENERGY = 800
 FOOD_ENERGY = 200
