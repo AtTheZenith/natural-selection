@@ -15,6 +15,7 @@ class Bot:
         speed: float = 1,
         range: float = 1,
         energy: float = 1,
+        team: int = 1,
     ):
         self.window = window
         self.x = x
@@ -27,14 +28,17 @@ class Bot:
         self.true_size = size * const.BOT_SIZE
         self.range = range
         self.true_range = range * const.BOT_RANGE + (self.true_size * 0.75)
+        self.team = team
         self.move_direction: List[float] = [0, 0]
 
-        self.image = const.BOT_IMAGE.copy()
+        self.image = const.BOT_IMAGES[team].copy()
         self.image = pygame.transform.scale_by(
             self.image, size * (const.BOT_SIZE / self.image.get_size()[1])
         )
 
     def draw(self):
+        if self.energy <= 0:
+            return
         self.window.blit(
             self.image,
             (
@@ -61,21 +65,25 @@ class Bot:
         self.move_direction[0] = x / mag
         self.move_direction[1] = y / mag
 
-    def update(self, time: float=const.FRAME_RATE):
+    def update(self, time: float = const.FRAME_RATE):
         self.manual_pos(
             self.x + self.move_direction[0] * self.true_speed * time,
             self.y + self.move_direction[1] * self.true_speed * time,
         )
 
         self.energy -= (
-            (self.size**2) * 10
-            + (
-                math.hypot(self.move_direction[0], self.move_direction[1])
-                * self.speed**2
+            (
+                (self.size**2) * 10
+                + (
+                    math.hypot(self.move_direction[0], self.move_direction[1])
+                    * self.speed**2
+                )
+                * 2
+                + (self.range**2.5) * 3  # + self.range
             )
+            * time
             * 2
-            + (self.range**2.5) * 5  # + self.range
-        ) * time * 2
+        )
 
     def add_energy(self, energy: float):
         self.energy = min(self.energy + energy, const.MAX_ENERGY)
@@ -86,11 +94,12 @@ class Bot:
             self.window,
             self.x,
             self.y,
-            self.size + (random.random() / 10 - 0.05),
+            self.size + (random.random() / 5 - 0.1),
             # self.size,
             self.speed + (random.random() * 2 / 5 - 0.2),
             self.range + (random.random() / 5 - 0.1),
             self.energy / 2 / const.MAX_ENERGY,
+            self.team,
         )
         print(
             f"New bot created:\nSize: {new_bot.size}\nSpeed: {new_bot.speed}\nRange: {new_bot.range}"

@@ -12,21 +12,21 @@ clock = pygame.time.Clock()
 
 pygame.display.set_caption("Natural Selection")
 
-br = BotRegistry()
+br_1 = BotRegistry()
+br_2 = BotRegistry()
 pos = [(80, const.HEIGHT / 2), (const.WIDTH - 80, const.HEIGHT / 2)]
 window = pygame.display.set_mode((const.WIDTH, const.HEIGHT))
 
-for x in range(2):
-    selected_pos = pos[x]
-    br.add(
-        Bot(
-            window,
-            selected_pos[0],
-            selected_pos[1],
-            size=1,
-            speed=1,
-        )
+br_1.add(
+    Bot(
+        window,
+        pos[0][0],
+        pos[0][1],
+        team=1,
     )
+)
+
+br_2.add(Bot(window, pos[1][0], pos[1][1], team=2))
 
 fr = FoodRegistry()
 for _ in range(const.FOOD_START):
@@ -35,7 +35,7 @@ for _ in range(const.FOOD_START):
     fr.add(Food(window, x, y))
 
 
-time = 0
+time: float = 0
 running = True
 while running:
     for event in pygame.event.get():
@@ -47,13 +47,19 @@ while running:
 
     window.fill((60, 60, 60))
 
-    for bot in br.bots:
-        target = br.get_in_range(bot, bot.true_range)
-        target = [other for other in target if bot.size / other.size > const.MIN_SIZE_DIFF]
-        
+    all_bots = br_1.bots + br_2.bots
+
+    for bot in all_bots:
+        this_br = br_1 if bot.team == 1 else br_2
+        other_br = br_1 if bot.team == 2 else br_2
+        target = other_br.get_in_range(bot, bot.true_range)
+        target = [
+            other for other in target if bot.size / other.size > const.MIN_SIZE_DIFF
+        ]
+
         num_1 = len(target)
         num_2 = len(fr.get_in_range(bot, bot.true_range))
-        
+
         if num_1 > 0:
             target_x = target[0].x
             target_y = target[0].y
@@ -69,9 +75,8 @@ while running:
         bot.update(delta)
 
     for _ in range(1):
-        for bot in br.bots:
-            nearby_bots = br.get_in_range(bot, int(bot.true_size * 1.5))
-            for other in nearby_bots:
+        for bot in br_1.bots:
+            for other in br_2.bots:
                 if bot != other and collision.is_colliding(bot, other):
                     big = max(bot.size, other.size)
                     small = min(bot.size, other.size)
@@ -79,10 +84,10 @@ while running:
                         match big:
                             case bot.size:
                                 bot.add_energy(other.energy)
-                                br.remove(other)
+                                br_2.remove(other)
                             case other.size:
                                 other.add_energy(bot.energy)
-                                br.remove(bot)
+                                br_1.remove(bot)
                     else:
                         collision.handle(bot, other)
 
@@ -93,11 +98,13 @@ while running:
         fr.add(Food(window, x, y))
         time -= const.FOOD_COOLDOWN
 
-    fr.check_eaten(br.bots)
-    br.energy_cycle()
-    br.reproduce_cycle()
+    fr.check_eaten(all_bots)
+    br_1.energy_cycle()
+    br_2.energy_cycle()
+    br_1.reproduce_cycle()
+    br_2.reproduce_cycle()
 
-    for bot in br.bots:
+    for bot in all_bots:
         bot.draw()
 
     for food in fr.food:

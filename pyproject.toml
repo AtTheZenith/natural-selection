@@ -1,6 +1,6 @@
 [project]
 name = "natural-selection"
-version = "1.1.0"
+version = "1.2.0"
 description = "Natural Selection Simulator"
 readme = "README.md"
 requires-python = ">=3.12"
