@@ -7,15 +7,17 @@ from food import Food, FoodRegistry
 
 pygame.init()
 
-window = pygame.display.set_mode((1920, 1020))
+window = pygame.display.set_mode((const.WIDTH, const.HEIGHT))
 clock = pygame.time.Clock()
 
 pygame.display.set_caption("Natural Selection")
 
 br = BotRegistry()
-pos = [(220, 220), (1700, 220), (220, 860), (1700, 860)]
-for _ in range(2):
-    selected_pos = random.choice(pos)
+pos = [(80, const.HEIGHT / 2), (const.WIDTH - 80, const.HEIGHT / 2)]
+window = pygame.display.set_mode((const.WIDTH, const.HEIGHT))
+
+for x in range(2):
+    selected_pos = pos[x]
     br.add(
         Bot(
             window,
@@ -28,12 +30,12 @@ for _ in range(2):
 
 fr = FoodRegistry()
 for _ in range(const.FOOD_START):
-    x = random.random() * 1920
-    y = random.random() * 1020
+    x = random.random() * const.WIDTH
+    y = random.random() * const.HEIGHT
     fr.add(Food(window, x, y))
 
 
-iter = 0
+time = 0
 running = True
 while running:
     for event in pygame.event.get():
@@ -41,23 +43,34 @@ while running:
             running = False
             exit()
 
+    delta = clock.tick(const.FRAME_RATE) / 1000
+
     window.fill((60, 60, 60))
 
     for bot in br.bots:
-        target = fr.get_nearest(bot, 1)
-        if target[0]:
+        target = br.get_in_range(bot, bot.true_range)
+        target = [other for other in target if bot.size / other.size > const.MIN_SIZE_DIFF]
+        
+        num_1 = len(target)
+        num_2 = len(fr.get_in_range(bot, bot.true_range))
+        
+        if num_1 > 0:
             target_x = target[0].x
             target_y = target[0].y
+            bot.move(target_x - bot.x, target_y - bot.y)
+        elif num_2 > 0:
+            target = fr.get_nearest(bot, 1)
+            target_x = target[0].x
+            target_y = target[0].y
+            bot.move(target_x - bot.x, target_y - bot.y)
         else:
-            target_x = 0
-            target_y = 0
+            bot.move(0, 0)
 
-        bot.move(target_x - bot.x, target_y - bot.y)
-        bot.update()
+        bot.update(delta)
 
-    for _ in range(3):
+    for _ in range(1):
         for bot in br.bots:
-            nearby_bots = br.get_in_range(bot, const.BOT_RANGE)
+            nearby_bots = br.get_in_range(bot, int(bot.true_size * 1.5))
             for other in nearby_bots:
                 if bot != other and collision.is_colliding(bot, other):
                     big = max(bot.size, other.size)
@@ -73,12 +86,12 @@ while running:
                     else:
                         collision.handle(bot, other)
 
-    iter += 1
-    if iter == const.FOOD_COOLDOWN * const.FRAME_RATE:
-        x = random.random() * 1920
-        y = random.random() * 1080
+    time += delta
+    if time > const.FOOD_COOLDOWN:
+        x = random.random() * const.WIDTH
+        y = random.random() * const.HEIGHT
         fr.add(Food(window, x, y))
-        iter = 0
+        time -= const.FOOD_COOLDOWN
 
     fr.check_eaten(br.bots)
     br.energy_cycle()
@@ -91,4 +104,3 @@ while running:
         food.draw()
 
     pygame.display.update()
-    clock.tick(const.FRAME_RATE)

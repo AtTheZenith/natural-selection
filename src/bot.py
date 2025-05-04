@@ -13,7 +13,7 @@ class Bot:
         y: float = 20,
         size: float = 1,
         speed: float = 1,
-        range: float = 50,
+        range: float = 1,
         energy: float = 1,
     ):
         self.window = window
@@ -26,9 +26,7 @@ class Bot:
         self.size = min(const.BOT_MAX_SIZE, max(const.BOT_MIN_SIZE, size))
         self.true_size = size * const.BOT_SIZE
         self.range = range
-        self.true_range = range * const.BOT_SIZE / 4 + (
-            self.true_size * math.sqrt(2) / 2
-        )
+        self.true_range = range * const.BOT_RANGE + (self.true_size * 0.75)
         self.move_direction: List[float] = [0, 0]
 
         self.image = const.BOT_IMAGE.copy()
@@ -63,15 +61,21 @@ class Bot:
         self.move_direction[0] = x / mag
         self.move_direction[1] = y / mag
 
-    def update(self, time=const.FRAME_RATE):
+    def update(self, time: float=const.FRAME_RATE):
         self.manual_pos(
-            self.x + self.move_direction[0] * self.true_speed / time,
-            self.y + self.move_direction[1] * self.true_speed / time,
+            self.x + self.move_direction[0] * self.true_speed * time,
+            self.y + self.move_direction[1] * self.true_speed * time,
         )
 
         self.energy -= (
-            ((self.size**4)) * (self.speed**2)  # + self.range
-        ) / const.FRAME_RATE
+            (self.size**2) * 10
+            + (
+                math.hypot(self.move_direction[0], self.move_direction[1])
+                * self.speed**2
+            )
+            * 2
+            + (self.range**2.5) * 5  # + self.range
+        ) * time * 2
 
     def add_energy(self, energy: float):
         self.energy = min(self.energy + energy, const.MAX_ENERGY)
@@ -82,12 +86,15 @@ class Bot:
             self.window,
             self.x,
             self.y,
-            self.size + (random.random() / 5 - 0.1),
-            self.speed + (random.random() / 5 - 0.1),
-            self.range,  # + (random.random() / 10 - 0.05),
+            self.size + (random.random() / 10 - 0.05),
+            # self.size,
+            self.speed + (random.random() * 2 / 5 - 0.2),
+            self.range + (random.random() / 5 - 0.1),
             self.energy / 2 / const.MAX_ENERGY,
         )
-        print(f"New bot created:\nSize: {new_bot.size}\nSpeed: {new_bot.speed}")
+        print(
+            f"New bot created:\nSize: {new_bot.size}\nSpeed: {new_bot.speed}\nRange: {new_bot.range}"
+        )
 
         return new_bot
 
@@ -136,7 +143,7 @@ class BotRegistry:
 
         return nearest
 
-    def get_in_range(self, bot, distance=const.BOT_RANGE):
+    def get_in_range(self, bot, distance: float = const.BOT_RANGE):
         in_range = []
         for sel in self.bots:
             if sel == bot:
