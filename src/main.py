@@ -17,14 +17,7 @@ br_2 = BotRegistry()
 pos = [(80, const.HEIGHT / 2), (const.WIDTH - 80, const.HEIGHT / 2)]
 window = pygame.display.set_mode((const.WIDTH, const.HEIGHT))
 
-br_1.add(
-    Bot(
-        window,
-        pos[0][0],
-        pos[0][1],
-        team=1,
-    )
-)
+br_1.add(Bot(window, pos[0][0], pos[0][1], team=1))
 
 br_2.add(Bot(window, pos[1][0], pos[1][1], team=2))
 
