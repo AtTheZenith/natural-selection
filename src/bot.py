@@ -126,7 +126,29 @@ class BotRegistry:
         else:
             return False
 
-    def get_nearest(self, bot, count=5):
+    def get_nearest_bot(self, bot):
+        nearest = None
+        for near in self.bots:
+            if near == bot:
+                continue
+            elif nearest is None:
+                nearest = near
+            else:
+                old_mag = pygame.math.Vector2(bot.x, bot.y).distance_to((
+                    nearest.x,
+                    nearest.y,
+                ))
+                new_mag = pygame.math.Vector2(bot.x, bot.y).distance_to((
+                    near.x,
+                    near.y,
+                ))
+
+                if new_mag < old_mag:
+                    nearest = near
+
+            return nearest
+
+    def get_nearest_bots(self, bot, count=5):
         nearest = []
         for near in self.bots:
             if near == bot:

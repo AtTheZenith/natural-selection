@@ -57,17 +57,14 @@ while running:
             other for other in target if bot.size / other.size > const.MIN_SIZE_DIFF
         ]
 
-        num_1 = len(target)
-        num_2 = len(fr.get_in_range(bot, bot.true_range))
-
-        if num_1 > 0:
+        if len(target) > 0:
             target_x = target[0].x
             target_y = target[0].y
             bot.move(target_x - bot.x, target_y - bot.y)
-        elif num_2 > 0:
-            target = fr.get_nearest(bot, 1)
-            target_x = target[0].x
-            target_y = target[0].y
+        elif len(fr.get_in_range(bot, bot.true_range)) > 0:
+            target = fr.get_nearest_food(bot=bot)
+            target_x = target.x
+            target_y = target.y
             bot.move(target_x - bot.x, target_y - bot.y)
         else:
             bot.move(0, 0)
